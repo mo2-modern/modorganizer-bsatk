@@ -162,7 +162,7 @@ private:
   std::unordered_map<std::string, Folder::Ptr> m_SubFoldersByName;
   std::vector<File::Ptr> m_Files;
 
-  mutable BSAULong m_OffsetWrite;
+  mutable BSAULong m_OffsetWrite{};
 };
 
 }  // namespace BSA
