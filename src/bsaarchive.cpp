@@ -167,7 +167,8 @@ EErrorCode Archive::read(const std::filesystem::path& fileName, bool testHashes)
     try {
       header = readHeader(m_File);
     } catch (const data_invalid_exception& e) {
-      throw data_invalid_exception(makeString("%s (filename: %s)", e.what(), fileName));
+      throw data_invalid_exception(
+          makeString("%s (filename: %s)", e.what(), fileName.string().c_str()));
     }
     m_ArchiveFlags = header.archiveFlags;
     m_Type         = header.type;
@@ -188,24 +189,24 @@ EErrorCode Archive::read(const std::filesystem::path& fileName, bool testHashes)
         fileNames.push_back(file);
         delete[] file;
       }
-      std::streamoff offset;
+      std::streamoff recordsOffset;
       switch (m_Type) {
       case TYPE_STARFIELD:
-        offset = 32;
+        recordsOffset = 32;
         break;
       case TYPE_STARFIELD_LZ4_TEXTURE:
-        offset = 36;
+        recordsOffset = 36;
         break;
       default:
-        offset = 24;
+        recordsOffset = 24;
       }
       if (strcmp(header.archType, "GNRL") == 0) {
-        m_File.seekg(offset, std::ios::beg);
+        m_File.seekg(recordsOffset, std::ios::beg);
         for (unsigned int i = 0; i < header.fileCount; ++i) {
-          BSAUInt nameHash = readType<BSAUInt>(m_File);
-          char* extension  = new char[4];
+          readType<BSAUInt>(m_File);  // name hash, unused
+          char* extension = new char[4];
           m_File.read(extension, 4);
-          BSAUInt dirHash = readType<BSAUInt>(m_File);
+          readType<BSAUInt>(m_File);  // dir hash, unused
           m_File.seekg(4, std::ios::cur);
           BSAHash offset       = readType<BSAHash>(m_File);
           BSAUInt packedSize   = readType<BSAUInt>(m_File);
@@ -217,7 +218,7 @@ EErrorCode Archive::read(const std::filesystem::path& fileName, bool testHashes)
           delete[] extension;
         }
       } else if (strcmp(header.archType, "DX10") == 0) {
-        m_File.seekg(offset, std::ios::beg);
+        m_File.seekg(recordsOffset, std::ios::beg);
         for (unsigned int i = 0; i < header.fileCount; ++i) {
           FO4TextureHeader texHeader;
           texHeader.nameHash = readType<BSAUInt>(m_File);
@@ -506,8 +507,6 @@ DirectX::DDS_HEADER Archive::getDDSHeader(File::Ptr file,
   if (file->m_TextureHeader.isCubemap)
     DDSHeaderData.caps2 = DDS_CUBEMAP_ALLFACES;
 
-  bool supported = true;
-
   switch (file->m_TextureHeader.format) {
   case DXGI_FORMAT_BC1_UNORM:
   case DXGI_FORMAT_BC1_UNORM_SRGB:
@@ -606,8 +605,8 @@ DirectX::DDS_HEADER Archive::getDDSHeader(File::Ptr file,
   return DDSHeaderData;
 }
 
-void Archive::getDX10Header(DirectX::DDS_HEADER_DXT10& DX10Header, File::Ptr file,
-                            DirectX::DDS_HEADER DDSHeader) const
+void Archive::getDX10Header(DirectX::DDS_HEADER_DXT10& DX10Header, File::Ptr,
+                            DirectX::DDS_HEADER) const
 {
   DX10Header.resourceDimension = DirectX::DDS_DIMENSION_TEXTURE2D;
   DX10Header.miscFlag          = 0;
@@ -670,7 +669,7 @@ EErrorCode Archive::extractDirect(File::Ptr file, std::ofstream& outFile) const
 #pragma message("report error!")
         return result;
       }
-      size -= fullName.length() + 1;
+      size -= static_cast<BSAULong>(fullName.length() + 1);
     }
     std::unique_ptr<unsigned char[]> buffer(new unsigned char[size]);
     m_File.read(reinterpret_cast<char*>(buffer.get()), size);
@@ -821,7 +820,7 @@ EErrorCode Archive::extractCompressed(File::Ptr file, std::ofstream& outFile) co
 #pragma message("report error!")
         return result;
       }
-      inSize -= fullName.length() + 1;
+      inSize -= static_cast<BSAULong>(fullName.length() + 1);
     }
     BSAULong outSize = readType<BSAULong>(m_File);
     inSize -= sizeof(BSAULong);
@@ -847,7 +846,7 @@ EErrorCode Archive::extractCompressed(File::Ptr file, std::ofstream& outFile) co
 #pragma message("report error!")
         return result;
       }
-      inSize -= fullName.length() + 1;
+      inSize -= static_cast<BSAULong>(fullName.length() + 1);
     }
     std::unique_ptr<unsigned char[]> inBuffer(new unsigned char[inSize]);
     m_File.read(reinterpret_cast<char*>(inBuffer.get()), inSize);

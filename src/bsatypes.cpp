@@ -48,9 +48,11 @@ std::string readBString(fstream& file)
 
 void writeBString(fstream& file, const std::string& string)
 {
-  unsigned int length =
-      std::min<unsigned int>(static_cast<unsigned int>(string.length()), 255);
-  writeType<unsigned char>(file, length + 1);
+  // the length byte counts the terminating null, so clamping the string itself to 255
+  // made length + 1 wrap to 0 and write a 256 byte record announced as empty
+  unsigned char length =
+      static_cast<unsigned char>(std::min<size_t>(string.length(), 254));
+  writeType<unsigned char>(file, static_cast<unsigned char>(length + 1));
   file.write(string.c_str(), length + 1);
 }
 

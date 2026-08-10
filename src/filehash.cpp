@@ -50,7 +50,8 @@ BSAHash calculateBSAHash(const std::string& fileName)
   char fileNameLower[FILENAME_MAX + 1];
   int i = 0;
   for (; i < FILENAME_MAX && fileName[i] != '\0'; ++i) {
-    fileNameLower[i] = tolower(fileName[i]);
+    fileNameLower[i] =
+        static_cast<char>(tolower(static_cast<unsigned char>(fileName[i])));
     if (fileNameLower[i] == '/') {
       fileNameLower[i] = '\\';
     }
