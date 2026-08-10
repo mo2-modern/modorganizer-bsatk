@@ -34,7 +34,7 @@ target_sources(bsatk
 
 )
 
-set_target_properties(bsatk PROPERTIES CXX_STANDARD 20)
+set_target_properties(bsatk PROPERTIES CXX_STANDARD 23)
 
 # for building
 target_include_directories(bsatk PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../include/bsatk)
