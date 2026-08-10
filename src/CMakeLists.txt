@@ -44,6 +44,7 @@ if (MSVC)
 		PRIVATE
 		"/MP"
 		"/W4"
+		"/WX"
 		"/external:anglebrackets"
 		"/external:W0"
 	)
